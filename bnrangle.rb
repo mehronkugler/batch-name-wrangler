@@ -75,7 +75,7 @@ puts "Series is active: #{ progress.series_active}"
 puts "Everything you typed: #{ARGV}"
 
 progress.files_in_progress << add_files
-puts "Files in progress (adding files = #{adding_files}: #{ progress.files_in_progress}" if adding_files == true
+puts "Files in progress (adding files = #{adding_files}): #{ progress.files_in_progress}" if adding_files == true
 
 =begin
 
