@@ -2,25 +2,50 @@
 
 # batch name wrangler
 
-require 'pathname'
+#require 'pathname'
 require 'CSV'
+#files_in_progress = CSV.parse(config_file.read)
 
-attr_accessor :file_list
-attr_reader :command_list
-attr_reader :config_file
+# from https://stackoverflow.com/questions/6760883/reading-specific-lines-from-an-external-file-in-ruby-io
 
-file_list = Array.new
-config_file = ".bnrangle"
-files_in_progress = File.open(config_file).first
 
-def load_state
-	
+class SettingsSession
+  attr_accessor :files_in_progress
+  attr_accessor :settingsFile
+  attr_accessor :series_active
 
-def eval_cli_arguments
-	add_files if ARGV[0] == "add"
+  def initialize
+    @files_in_progress = Array.new
+    @series_active = false
+  end
+
+  def load
+    @settingsFile = IO.readlines(".bnrangle")
+    @files_in_progress = CSV.parse_line(settingsFile[0])
+    # series_active_state = SettingsFile[1]
+    @series_active = true if settingsFile[1].include? "true"
+  end
+
 end
 
-def add_files
+progress = SettingsSession.new
+progress.load
+puts "Files in progress #{ progress.files_in_progress}"
+puts "Series is active: #{ progress.series_active}"
 
-end
+=begin
+command_parameter = ARGV.first
+
+add_files if command_parameter == "add"
+rem_files if command_parameter == "rem"
+show_status if command_parameter == "status"
+clear_all_settings if command_parameter == "clear"
+set_prepend if command_parameter == "prepend"
+set_append if command_parameter == "append"
+set_filename if command_parameter == "rename"
+list_files if command_parameter == "list"
+config_series if command_parameter == "series"
+
+save_progress
+=end
 
