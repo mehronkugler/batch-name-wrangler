@@ -8,7 +8,6 @@ require 'CSV'
 
 # from https://stackoverflow.com/questions/6760883/reading-specific-lines-from-an-external-file-in-ruby-io
 
-
 class SettingsSession
   attr_accessor :files_in_progress
   attr_accessor :settingsFile
@@ -28,15 +27,38 @@ class SettingsSession
 
 end
 
+def command_parameter
+  if !ARGV.first.nil?
+    return ARGV.first
+  else return "nil"
+  end
+end
+
+def add_files
+
+end
+
+
+def take_action
+  add_files if command_parameter == "add"
+  ARGV.shift # remove the command parameter from the rest of the arguments
+  ARGV.each do |addfile|
+    
+  end
+
+end
+
 progress = SettingsSession.new
 progress.load
 puts "Files in progress #{ progress.files_in_progress}"
 puts "Series is active: #{ progress.series_active}"
+puts "Command parameter (first argument) is \"#{command_parameter}\""
+
+
 
 =begin
-command_parameter = ARGV.first
 
-add_files if command_parameter == "add"
+
 rem_files if command_parameter == "rem"
 show_status if command_parameter == "status"
 clear_all_settings if command_parameter == "clear"
