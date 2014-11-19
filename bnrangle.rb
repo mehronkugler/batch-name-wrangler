@@ -40,7 +40,7 @@ def command_parameter
 end
 
 def adding_files
-  true if command_parameter == "add"
+  true if command_parameter == "add" && ARGV.length > 1
 end
 
 def add_files
@@ -56,17 +56,13 @@ def add_files
         puts "\"#{addfile}\" wasn't found to be an existing file, did you type it correctly?"
       end
     end
-  else
-    puts "You wanted to add files, but didn't list any after \"add\""
+    addSession.files_in_progress
   end
-  addSession.files_in_progress
+  nil
 end
 
 # evaluate the command paramenter
 
-def saved_files
-  Settings.files_in_progress
-end
 
 progress = SettingsSession.new
 
@@ -76,7 +72,7 @@ puts "Series is active: #{ progress.series_active}"
 puts "Everything you typed: #{ARGV}"
 
 if adding_files == true
-  progress.files_in_progress << add_files
+  progress.files_in_progress << add_files if add_files != nil
   puts "Files in progress (adding files = #{adding_files}: #{ progress.files_in_progress}" if adding_files == true
 end
 
