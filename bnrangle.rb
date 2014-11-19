@@ -10,20 +10,23 @@ require 'CSV'
 
 class SettingsSession
   attr_accessor :files_in_progress
-  attr_accessor :settingsFile
+  attr_accessor :settingsRead
   attr_accessor :series_active
+  attr_reader :settingsFile
 
   def initialize
-    @settingsFile = IO.readlines(".bnrangle")
-    @files_in_progress = CSV.parse_line(settingsFile[0])
+    @settingsFile = ".bnrangle"
+    @settingsRead = IO.readlines(@settingsFile)
+    @files_in_progress = CSV.parse_line(@settingsRead[0])
     @series_active = false
-    @series_active = true if settingsFile[1].include? "true"
+    @series_active = true if @settingsRead[1].include? "true"
   end
 
-  def load
-    
-    
-    # series_active_state = SettingsFile[1]
+  def save
+    open(@settingsFile, "w") do |writefile|
+      writefile << add_files
+      writefile << "series_active = #{@series_active}"
+    end
     
   end
 
@@ -66,16 +69,16 @@ def saved_files
 end
 
 progress = SettingsSession.new
-progress.load
-
 
 puts "Command parameter (first argument) is \"#{command_parameter}\""
 puts "Did not add any files." if adding_files == false
 puts "Series is active: #{ progress.series_active}"
 puts "Everything you typed: #{ARGV}"
 
-progress.files_in_progress << add_files
-puts "Files in progress (adding files = #{adding_files}: #{ progress.files_in_progress}" if adding_files == true
+if adding_files == true
+  progress.files_in_progress << add_files
+  puts "Files in progress (adding files = #{adding_files}: #{ progress.files_in_progress}" if adding_files == true
+end
 
 =begin
 
