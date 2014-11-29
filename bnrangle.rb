@@ -8,26 +8,34 @@ require 'CSV'
 
 # from https://stackoverflow.com/questions/6760883/reading-specific-lines-from-an-external-file-in-ruby-io
 
-class SettingsSession
-  attr_accessor :files_in_progress
-  attr_accessor :settingsRead
-  attr_accessor :series_active
-  attr_reader :settingsFile
+
+class SettingsFile
+
+  attr_reader :fileLocation
+  attr_reader :savedFiles
+  attr_reader :savedSeries
 
   def initialize
-    @settingsFile = ".bnrangle"
-    @settingsRead = IO.readlines(@settingsFile)
-    @files_in_progress = CSV.parse_line(@settingsRead[0])
-    @series_active = false
-    @series_active = true if @settingsRead[1].include? "true"
+    @fileLocation = ".bnrangle"
+    @savedFiles = readSettings[0]
+    @savedSeries = false
+    @savedSeries = true if (readSettings[1].include? "true")
   end
 
-  def save
-    open(@settingsFile, "w") do |writefile|
-      writefile << add_files
-      writefile << "series_active = #{@series_active}"
+  def readSettings
+    IO.readlines(@fileLocation)
+  end
+
+
+  def writeSettings(*args)
+    if args[0] != ""
+      open('#{fileLocation}', "w") do |writefile|
+        writefile << args[0].gsub(%r{\"}, '').gsub(%r{\[}, '').gsub(%r{\]}, '') #array of files in progress
+        writefile << "series active = " + args[1] + ""
+      end
+    else
+      puts "writeSettings: Tried to write settings to file but didn't give actual data (empty arguments)."
     end
-    
   end
 
 end
@@ -43,6 +51,52 @@ def adding_files
   true if command_parameter == "add" && ARGV.length > 1
 end
 
+def changing_series
+  true if command_parameter == "series" && ARGV.length == 2
+end
+
+def help_text
+  puts "Batch Name Wrangler by Mehron Kugler"
+  puts "Possible command-line arguments are: "
+  puts "\"series\" followed by on or off: request that all filenames stored by the program end in a series of numbers going up from 1."
+  puts "\"add\" followed by any number of files separated by spaces: adds the specified files to the Wrangler's memory for renaming."
+  puts "\"help\": this help text, which also shows up by running the program without arguments."
+end
+
+def needs_help
+  if command_parameter == "help" || command_parameter.nil?
+    true
+  else
+    false
+  end
+end
+
+def parameter_known
+  if command_parameter == "help" || command_parameter == "add" || command_parameter == "series"
+    true
+  else
+    false
+  end
+end
+
+def add_files
+  addSession = SettingsFile.new
+  files_to_append = Array.new
+    #ARGV.drop(1) # remove the command parameter from the rest of the arguments
+
+    ARGV.drop(1).each do |addfile| 
+      if File.file?(addfile)
+        files_to_append << addfile
+        # puts "Added #{addfile} to the files_in_progress array."
+      else
+        puts "I couldn't add \"#{addfile}\", did you type its location/name correctly?"
+      end
+    end
+    puts "(testing add_files): The list of files to be added is: #{files_to_append}"
+
+end
+
+=begin
 def add_files
   addSession = SettingsSession.new
 
@@ -60,21 +114,33 @@ def add_files
   end
   nil
 end
+=end
 
 # evaluate the command paramenter
 
+test = SettingsFile.new
+=begin
+puts "Command parameter (first argument you typed) is \"#{command_parameter}\""
+puts "(test settingsFile class): fileLocation: #{test.fileLocation}"
+puts "(test settingsFile class): saved array of files: #{test.savedFiles}"
+puts "(test settingsFile class): saved series boolean: #{test.savedSeries}"
 
-progress = SettingsSession.new
+puts "(test parameter_unknown): is what you typed (\"#{command_parameter}\") a known command? \"#{parameter_known}\""
+=end
 
-puts "Command parameter (first argument) is \"#{command_parameter}\""
-puts "Did not add any files." if adding_files == false
-puts "Series is active: #{ progress.series_active}"
-puts "Everything you typed: #{ARGV}"
+puts "SettingsFile.savedFiles.class: #{test.savedFiles.class}"
+puts "SettingsFile.savedFiles.split(\",\").class: #{test.savedFiles.split(",").class}"
+puts ""
 
-if adding_files == true
-  progress.files_in_progress << add_files if add_files != nil
-  puts "Files in progress (adding files = #{adding_files}: #{ progress.files_in_progress}" if adding_files == true
-end
+
+
+puts "Adding files was triggered (command parameter is \"#{command_parameter}\")" if adding_files
+puts "A change of the \"series\" variable was REQUESTED (command parameter is \"#{command_parameter}\")" if command_parameter == "series"
+puts "The \"series\" variable was (theoretically) CHANGED to \"#{ARGV[1]}\"." if changing_series 
+puts "The HELP TEXT was requested (command paramemter is \"help\" or \"nil\")\n" if needs_help
+help_text if needs_help
+puts ""
+
 
 =begin
 
