@@ -26,19 +26,28 @@ class SettingsFile
     IO.readlines(@fileLocation)
   end
 
-
   def writeSettings(*args)
-    if args[0] != ""
+    # first argument has to be array
+    if args[0].class == Array
       open('#{fileLocation}', "w") do |writefile|
-        writefile << args[0].gsub(%r{\"}, '').gsub(%r{\[}, '').gsub(%r{\]}, '') #array of files in progress
+        # scrub extra characters so it's only comma-separated values and no spaces, for easy reading
+        writefile << scrubArray(args[0])
         writefile << "series active = " + args[1] + ""
       end
     else
-      puts "writeSettings: Tried to write settings to file but didn't give actual data (empty arguments)."
+      puts "writeSettings: Tried to write settings to file but first parameter was not array."
     end
   end
 
 end
+
+# return the string value of every array item separated by commas
+# need this to write a "clean" string to the settings file so that
+# we can read the line fresh and just .split it to an array immediately
+def scrubArray(array_to_clean)
+  array_to_clean.to_s.gsub(/"/, '').gsub(%r{\[}, '').gsub(/]/, '').gsub(/ /, '')
+end
+
 
 def command_parameter
   if !ARGV.first.nil?
@@ -92,46 +101,23 @@ def add_files
         puts "I couldn't add \"#{addfile}\", did you type its location/name correctly?"
       end
     end
-    puts "(testing add_files): The list of files to be added is: #{files_to_append}"
-
+ addSession. files_to_append
 end
-
-=begin
-def add_files
-  addSession = SettingsSession.new
-
-  #ARGV.shift # remove the command parameter from the rest of the arguments
-  if ARGV.length > 0
-    ARGV.drop(1).each do |addfile| 
-      if File.file?(addfile)
-        addSession.files_in_progress << addfile
-        puts "Added #{addfile} to the files_in_progress array."
-      else
-        puts "\"#{addfile}\" wasn't found to be an existing file, did you type it correctly?"
-      end
-    end
-    addSession.files_in_progress
-  end
-  nil
-end
-=end
 
 # evaluate the command paramenter
 
 test = SettingsFile.new
-=begin
+
 puts "Command parameter (first argument you typed) is \"#{command_parameter}\""
 puts "(test settingsFile class): fileLocation: #{test.fileLocation}"
 puts "(test settingsFile class): saved array of files: #{test.savedFiles}"
 puts "(test settingsFile class): saved series boolean: #{test.savedSeries}"
 
 puts "(test parameter_unknown): is what you typed (\"#{command_parameter}\") a known command? \"#{parameter_known}\""
-=end
+
 
 puts "SettingsFile.savedFiles.class: #{test.savedFiles.class}"
 puts "SettingsFile.savedFiles.split(\",\").class: #{test.savedFiles.split(",").class}"
-puts ""
-
 
 
 puts "Adding files was triggered (command parameter is \"#{command_parameter}\")" if adding_files
