@@ -3,6 +3,9 @@
 # batch name wrangler by Mehron Kugler
 # version 0.0.1
 
+# todo : deal with blank settings file
+require 'fileutils'
+
 def testing
   true #change to false when done testing
 end
@@ -15,14 +18,24 @@ class SettingsFile
 
   def initialize
     @fileLocation = ".bnrangle"
-    tempLoad = readSettings[0].gsub(/ /, '') # if (IO.readlines(@fileLocation) != "")
-    # tempLoad = Array.new if (IO.readlines(@fileLocation) == "")
-    @savedFiles = tempLoad.chomp.split(",") #loads as array automatically
-    @savedSeries = false
-    @savedSeries = true if (readSettings[1].include? "on")
+    if readSettings[0].class == NilClass #blank line, new file
+      tempLoad = Array.new
+      @savedFiles = tempLoad
+      @savedSeries = false
+    else
+      tempLoad = readSettings[0].gsub(/ /, '') # if (IO.readlines(@fileLocation) != "")
+      @savedFiles = tempLoad.chomp.split(",") #loads as array automatically
+      @savedSeries = false
+      @savedSeries = true if (readSettings[1].include? "on")
+    end
+
   end
 
   def readSettings
+    if !File.exist? @fileLocation
+      puts "Didn't see .bnrangle file here, creating new file."
+      FileUtils.touch(".bnrangle")
+    end
     IO.readlines(@fileLocation)
   end
 
@@ -39,6 +52,8 @@ class SettingsFile
         puts `cat .bnrangle`
       end
   end
+
+
 end
 
 
@@ -69,6 +84,7 @@ def help_text
   puts "Batch Name Wrangler by Mehron Kugler"
   puts "Possible command-line arguments are: "
   puts "\"series\" followed by on or off: request that all filenames stored by the program end in a series of numbers going up from 1."
+  puts "\"series\" by itself will show the status of the SERIES variable."
   puts "\"add\" followed by any number of files separated by spaces: adds the specified files to the Wrangler's memory for renaming."
   puts "\"forget\" followed by files which you have already added: removes the specified files from BNWrangler's memory."
   puts "\"help\": this help text, which also shows up by running the program without arguments."
@@ -163,16 +179,10 @@ list_files if command_parameter == "list"                               # WORKS
 
 =begin
 
-
-rem_files if command_parameter == "rem"
-show_status if command_parameter == "status"
 clear_all_settings if command_parameter == "clear"
 set_prepend if command_parameter == "prepend"
 set_append if command_parameter == "append"
 set_filename if command_parameter == "rename"
-list_files if command_parameter == "list"
-config_series if command_parameter == "series"
 
-save_progress
 =end
 
