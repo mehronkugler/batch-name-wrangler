@@ -27,14 +27,16 @@ class SettingsFile
     IO.readlines(@fileLocation)
   end
 
-  def writeSettings
-      open('#{@fileLocation}', "w") do |writefile|
+  def writeSettings(filestosave)
+    # receive an array joined by ','
+      open(@fileLocation, "w") do |writefile|
         # scrub extra characters so it's only comma-separated values and no spaces, for easy reading
-        puts "Going to write: #{@savedFiles.join(',')}"
-        writefile << @savedFiles.join(',')
-        writefile << "series active = " + "#{@savedSeries}"
+        puts "Going to write: #{filestosave}"
+        writefile.puts filestosave
+        writefile.puts "series active = " + "#{@savedSeries}"
       end
-
+      puts "Contents of .bnrangle now:"
+      puts `cat .bnrangle`
   end
 
 end
@@ -79,6 +81,21 @@ def command_known
   valid_commands.include? command_parameter
 end
 
+def add_files
+    addSession = SettingsFile.new
+    #ARGV.drop(1) # remove the command parameter from the rest of the arguments
+
+    ARGV.drop(1).each do |addfile| 
+      if File.file?(addfile)
+        addSession.savedFiles << addfile
+        # puts "Added #{addfile} to the files_in_progress array."
+      else
+        puts "I couldn't add \"#{addfile}\", did you type its location/name correctly?"
+      end
+    end
+    # pass a string so it can be written in one line to the text file
+    addSession.savedFiles.join(',')
+end
 
 def test_add_files
   addSession = SettingsFile.new
@@ -92,10 +109,10 @@ def test_add_files
         puts "I couldn't add \"#{addfile}\", did you type its location/name correctly?"
       end
     end
- # addSession.savedFiles << files_to_append
  puts "addSession.savedFiles: #{addSession.savedFiles}"
  puts "addSession.savedFiles.class should be array: it is #{addSession.savedFiles.class}"
  puts "Theoretically, the program would write to file: addSession.savedFiles.join(\',\'): #{addSession.savedFiles.join(',')}"
+ puts "So will have to pass a joined array to the write function."
 end
 
 def change_series
@@ -131,8 +148,8 @@ puts "(testing series) The \"series\" variable was (temporarily) CHANGED to \"#{
 puts "(testing help) The HELP TEXT was requested (command paramemter is \"help\" or \"nil\")\n" if needs_help
 help_text if needs_help
 test_change_series if changing_series
-test_add_files if adding_files
-
+#test_add_files if adding_files
+test.writeSettings(add_files) if adding_files
 
 =begin
 
