@@ -1,12 +1,7 @@
 #!/usr/bin/env ruby
 
-# batch name wrangler
-
-#require 'pathname'
-require 'CSV'
-#files_in_progress = CSV.parse(config_file.read)
-
-# from https://stackoverflow.com/questions/6760883/reading-specific-lines-from-an-external-file-in-ruby-io
+# batch name wrangler by Mehron Kugler
+# version 0.0.1
 
 def testing
   true #change to false when done testing
@@ -32,7 +27,7 @@ class SettingsFile
   end
 
   def writeSettings(filestosave, series)
-    # receive an array joined by ','
+    # receive an array joined by ',' -- needs to be string
       open(@fileLocation, "w") do |writefile|
         # scrub extra characters so it's only comma-separated values and no spaces, for easy reading
         puts "Going to write: #{filestosave}" if testing
