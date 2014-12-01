@@ -12,42 +12,37 @@ require 'CSV'
 class SettingsFile
 
   attr_reader :fileLocation
-  attr_reader :savedFiles
-  attr_reader :savedSeries
+  attr_accessor :savedFiles
+  attr_accessor :savedSeries
 
   def initialize
     @fileLocation = ".bnrangle"
-    @savedFiles = readSettings[0]
+    tempLoad = readSettings[0].gsub(/ /, '')
+    @savedFiles = tempLoad.chomp.split(",") #loads as array automatically
     @savedSeries = false
-    @savedSeries = true if (readSettings[1].include? "true")
+    @savedSeries = true if (readSettings[1].include? "on")
   end
 
   def readSettings
     IO.readlines(@fileLocation)
   end
 
-  def writeSettings(*args)
-    # first argument has to be array
-    if args[0].class == Array
-      open('#{fileLocation}', "w") do |writefile|
+  def writeSettings
+      open('#{@fileLocation}', "w") do |writefile|
         # scrub extra characters so it's only comma-separated values and no spaces, for easy reading
-        writefile << scrubArray(args[0])
-        writefile << "series active = " + args[1] + ""
+        puts "Going to write: #{@savedFiles.join(',')}"
+        writefile << @savedFiles.join(',')
+        writefile << "series active = " + "#{@savedSeries}"
       end
-    else
-      puts "writeSettings: Tried to write settings to file but first parameter was not array."
-    end
+
   end
 
 end
 
-# return the string value of every array item separated by commas
-# need this to write a "clean" string to the settings file so that
-# we can read the line fresh and just .split it to an array immediately
-def scrubArray(array_to_clean)
-  array_to_clean.to_s.gsub(/"/, '').gsub(%r{\[}, '').gsub(/]/, '').gsub(/ /, '')
-end
 
+def valid_commands
+  ["add", "help", "series"]
+end
 
 def command_parameter
   if !ARGV.first.nil?
@@ -61,7 +56,7 @@ def adding_files
 end
 
 def changing_series
-  true if command_parameter == "series" && ARGV.length == 2
+  true if command_parameter == "series" && ARGV.length == 2 && (ARGV[1] == "true" || ARGV[1] == "false")
 end
 
 def help_text
@@ -80,31 +75,42 @@ def needs_help
   end
 end
 
-def parameter_known
-  if command_parameter == "help" || command_parameter == "add" || command_parameter == "series"
-    true
-  else
-    false
-  end
+def command_known
+  valid_commands.include? command_parameter
 end
 
-def add_files
+
+def test_add_files
   addSession = SettingsFile.new
-  files_to_append = Array.new
     #ARGV.drop(1) # remove the command parameter from the rest of the arguments
 
     ARGV.drop(1).each do |addfile| 
       if File.file?(addfile)
-        files_to_append << addfile
+        addSession.savedFiles << addfile
         # puts "Added #{addfile} to the files_in_progress array."
       else
         puts "I couldn't add \"#{addfile}\", did you type its location/name correctly?"
       end
     end
- addSession. files_to_append
+ # addSession.savedFiles << files_to_append
+ puts "addSession.savedFiles: #{addSession.savedFiles}"
+ puts "addSession.savedFiles.class should be array: it is #{addSession.savedFiles.class}"
+ puts "Theoretically, the program would write to file: addSession.savedFiles.join(\',\'): #{addSession.savedFiles.join(',')}"
 end
 
+def change_series
+  addSession = SettingsFile.new
+  addSession.savedSeries = true if ARGV[1].include? "true"
+  addSession.writeSettings(addSession.savedFiles, addSession.savedSeries)
+end
+
+def test_change_series
+  addSession = SettingsFile.new
+  puts "addSession class: #{addSession.class}"
+  addSession.savedSeries = true if ARGV[1].include? "true" 
+  puts "addSession.savedSeries value before writing: #{addSession.savedSeries}"
 # evaluate the command paramenter
+end
 
 test = SettingsFile.new
 
@@ -113,19 +119,19 @@ puts "(test settingsFile class): fileLocation: #{test.fileLocation}"
 puts "(test settingsFile class): saved array of files: #{test.savedFiles}"
 puts "(test settingsFile class): saved series boolean: #{test.savedSeries}"
 
-puts "(test parameter_unknown): is what you typed (\"#{command_parameter}\") a known command? \"#{parameter_known}\""
-
+puts "(test valid_commands): is what you typed in the array valid_commands? #{command_known}"
 
 puts "SettingsFile.savedFiles.class: #{test.savedFiles.class}"
-puts "SettingsFile.savedFiles.split(\",\").class: #{test.savedFiles.split(",").class}"
+puts "SettingsFile.savedFiles.join(\",\").class: #{test.savedFiles.join(",").class}"
 
 
-puts "Adding files was triggered (command parameter is \"#{command_parameter}\")" if adding_files
-puts "A change of the \"series\" variable was REQUESTED (command parameter is \"#{command_parameter}\")" if command_parameter == "series"
-puts "The \"series\" variable was (theoretically) CHANGED to \"#{ARGV[1]}\"." if changing_series 
-puts "The HELP TEXT was requested (command paramemter is \"help\" or \"nil\")\n" if needs_help
+puts "(testing input) Adding files was triggered (command parameter is \"#{command_parameter}\")" if adding_files
+puts "(testing series) A change of the \"series\" variable was REQUESTED (command parameter is \"#{command_parameter}\")" if command_parameter == "series"
+puts "(testing series) The \"series\" variable was (temporarily) CHANGED to \"#{ARGV[1]}\"." if changing_series 
+puts "(testing help) The HELP TEXT was requested (command paramemter is \"help\" or \"nil\")\n" if needs_help
 help_text if needs_help
-puts ""
+test_change_series if changing_series
+test_add_files if adding_files
 
 
 =begin
