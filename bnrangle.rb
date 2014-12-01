@@ -27,23 +27,22 @@ class SettingsFile
     IO.readlines(@fileLocation)
   end
 
-  def writeSettings(filestosave)
+  def writeSettings(filestosave, series)
     # receive an array joined by ','
       open(@fileLocation, "w") do |writefile|
         # scrub extra characters so it's only comma-separated values and no spaces, for easy reading
         puts "Going to write: #{filestosave}"
         writefile.puts filestosave
-        writefile.puts "series active = " + "#{@savedSeries}"
+        writefile.puts "series active = " + "#{series}"
       end
       puts "Contents of .bnrangle now:"
       puts `cat .bnrangle`
   end
-
 end
 
 
 def valid_commands
-  ["add", "help", "series"]
+  ["add", "help", "series", "forget", "list"]
 end
 
 def command_parameter
@@ -51,6 +50,10 @@ def command_parameter
     return ARGV.first
   else return "nil"
   end
+end
+
+def forgetting_files
+  true if command_parameter == "forget"
 end
 
 def adding_files
@@ -115,6 +118,24 @@ def test_add_files
  puts "So will have to pass a joined array to the write function."
 end
 
+def list_files
+  addSession = SettingsFile.new
+  puts "(test list) List of files BNRangle will work on: #{addSession.savedFiles}"
+end
+
+def test_del_files
+  addSession = SettingsFile.new
+
+  ARGV.drop(1).each do |remfile|
+    if addSession.savedFiles.include? remfile
+      #take out remfile
+    else
+      puts "I couldn't find #{remfile} in the list of files to be modified, did you type it correctly?"
+    end
+  end
+  # addSession.savedFiles.join(',')
+end
+
 def change_series
   addSession = SettingsFile.new
   addSession.savedSeries = true if ARGV[1].include? "true"
@@ -132,9 +153,9 @@ end
 test = SettingsFile.new
 
 puts "Command parameter (first argument you typed) is \"#{command_parameter}\""
-puts "(test settingsFile class): fileLocation: #{test.fileLocation}"
-puts "(test settingsFile class): saved array of files: #{test.savedFiles}"
-puts "(test settingsFile class): saved series boolean: #{test.savedSeries}"
+# puts "(test settingsFile class): fileLocation: #{test.fileLocation}"
+# puts "(test settingsFile class): saved array of files: #{test.savedFiles}"
+# puts "(test settingsFile class): saved series boolean: #{test.savedSeries}"
 
 puts "(test valid_commands): is what you typed in the array valid_commands? #{command_known}"
 
@@ -143,6 +164,7 @@ puts "SettingsFile.savedFiles.join(\",\").class: #{test.savedFiles.join(",").cla
 
 
 puts "(testing input) Adding files was triggered (command parameter is \"#{command_parameter}\")" if adding_files
+puts "(testing input) Forgetting files was triggered (command parameter is \"#{command_parameter}\")" if forgetting_files
 puts "(testing series) A change of the \"series\" variable was REQUESTED (command parameter is \"#{command_parameter}\")" if command_parameter == "series"
 puts "(testing series) The \"series\" variable was (temporarily) CHANGED to \"#{ARGV[1]}\"." if changing_series 
 puts "(testing help) The HELP TEXT was requested (command paramemter is \"help\" or \"nil\")\n" if needs_help
@@ -150,6 +172,8 @@ help_text if needs_help
 test_change_series if changing_series
 #test_add_files if adding_files
 test.writeSettings(add_files) if adding_files
+puts "(testing list) The LIST command was requested." if command_parameter == "list"
+list_files if command_parameter == "list"
 
 =begin
 
