@@ -57,11 +57,22 @@ class SettingsFile
     true if @savedFiles.include? filetocheck
   end
 
+  def clear_settings
+    puts "(Clear settings) Making new .bnrangle file. Is this what you want? Type Y or N"
+    answer = STDIN.gets.chomp
+    if answer == "Y"
+      FileUtils.touch(".bnrangle")
+      writeSettings("", false)
+    else
+      puts "You typed: #{answer} -- Unless you type Y, I won't clear settings."
+    end
+  end
+
 end
 
 
 def valid_commands
-  ["add", "help", "series", "forget", "list"]
+  ["add", "help", "series", "forget", "list", "clear"]
 end
 
 def command_parameter
@@ -90,6 +101,7 @@ def help_text
   puts "\"series\" by itself will show the status of the SERIES variable."
   puts "\"add\" followed by any number of files separated by spaces: adds the specified files to the Wrangler's memory for renaming."
   puts "\"forget\" followed by files which you have already added: removes the specified files from BNWrangler's memory."
+  puts "\"clear\": Wipes all settings. Use carefully."
   puts "\"help\": this help text, which also shows up by running the program without arguments."
 end
 
@@ -115,10 +127,10 @@ def add_files
           addSession.savedFiles << addfile
           # puts "Added #{addfile} to the files_in_progress array."
         else
-          puts "Attention: That file, #{addfile}, already exists in the list, I won't add it."
+          puts "(Add) Attention: That file, #{addfile}, already exists in the list, I won't add it."
         end
       else
-        puts "I couldn't add \"#{addfile}\", did you type its location/name correctly?"
+        puts "(Add) I couldn't add \"#{addfile}\", did you type its location/name correctly?"
       end
     end
     # pass a string so it can be written in one line to the text file
@@ -129,8 +141,8 @@ end
 
 def list_files
   addSession = SettingsFile.new
-  puts "(testing list) The LIST command was requested." if testing
-  puts "(test list) List of files BNRangle will work on: #{addSession.savedFiles}"
+  puts "(List) The LIST command was requested." if testing
+  puts "(List) List of files BNRangle will work on: #{addSession.savedFiles}"
 end
 
 def forget_files
@@ -141,10 +153,10 @@ def forget_files
       puts "Forgetting " + remfile
       addSession.savedFiles.delete(remfile)
     else
-      puts "I couldn't find #{remfile} in the list of files to be modified, did you type it correctly?"
+      puts "(Forget) I couldn't find #{remfile} in the list of files to be modified, did you type it correctly or already remove it?"
     end
   end
-  puts "Finished forgetting, new list to be saved to file is: #{addSession.savedFiles}" if testing
+  puts "(Forget) Finished forgetting, new list to be saved to file is: #{addSession.savedFiles}" if testing
   addSession.savedFiles.join(',')
 end
 
@@ -153,10 +165,10 @@ def change_series
   if changing_series
     addSession.savedSeries = true if ARGV[1].include? "true"
     addSession.savedSeries = false if ARGV[1].include? "false"
-    puts "Going to save series as: #{addSession.savedSeries}"
+    puts "(Series) Going to save series as: #{addSession.savedSeries}"
     addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeries)
   else
-    puts "The SERIES variable is set to: #{addSession.savedSeries} (will/will not add numbers starting at to all files.)"
+    puts "(Series) The SERIES variable is set to: #{addSession.savedSeries} (will/will not add numbers starting at to all files.)"
   end
 end
 
@@ -169,6 +181,7 @@ puts "Command parameter (first argument you typed) is \"#{command_parameter}\"" 
 puts "(test valid_commands): is what you typed in the array valid_commands? #{command_known}" if testing
 puts "SettingsFile.savedFiles.class: #{test.savedFiles.class}" if testing
 puts "SettingsFile.savedFiles.join(\",\").class: #{test.savedFiles.join(",").class}" if testing
+# puts "(testing Clear) You requested to CLEAR the .bnrangle file." if command_parameter == "clear"
 
 #
 # WORKING
@@ -185,6 +198,7 @@ change_series if command_parameter == "series"                          # ?
 
 list_files if command_parameter == "list"                               # WORKS
 
+test.clear_settings if command_parameter == "clear"
 
 =begin
 
