@@ -53,6 +53,9 @@ class SettingsFile
       end
   end
 
+  def file_is_duplicate(filetocheck)
+    true if @savedFiles.include? filetocheck
+  end
 
 end
 
@@ -108,8 +111,12 @@ def add_files
 
     ARGV.drop(1).each do |addfile| 
       if File.file?(addfile)
-        addSession.savedFiles << addfile
-        # puts "Added #{addfile} to the files_in_progress array."
+        if !addSession.file_is_duplicate(addfile)
+          addSession.savedFiles << addfile
+          # puts "Added #{addfile} to the files_in_progress array."
+        else
+          puts "Attention: That file, #{addfile}, already exists in the list, I won't add it."
+        end
       else
         puts "I couldn't add \"#{addfile}\", did you type its location/name correctly?"
       end
@@ -117,6 +124,8 @@ def add_files
     # pass a string so it can be written in one line to the text file
     addSession.savedFiles.join(',')
 end
+
+
 
 def list_files
   addSession = SettingsFile.new
@@ -164,7 +173,7 @@ puts "SettingsFile.savedFiles.join(\",\").class: #{test.savedFiles.join(",").cla
 #
 # WORKING
 
-puts "(ready) You wanted to add files, but didn't specify any." if command_parameter == "add"
+puts "(ready) You wanted to add files, but didn't specify any." if command_parameter == "add" && ARGV.length == 1
 test.writeSettings(add_files, test.savedSeries) if adding_files         # WORKS
 
 puts "(ready) You wanted to forget files, but didn't specify any." if command_parameter == "forget"
