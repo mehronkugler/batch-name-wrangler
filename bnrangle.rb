@@ -15,6 +15,7 @@ class SettingsFile
   attr_reader :fileLocation
   attr_accessor :savedFiles
   attr_accessor :savedSeries
+  attr_accessor :prepend
 
   def initialize
     @fileLocation = ".bnrangle"
@@ -22,11 +23,13 @@ class SettingsFile
       tempLoad = Array.new
       @savedFiles = tempLoad
       @savedSeries = false
+      @prepend = ""
     else
       tempLoad = readSettings[0].gsub(/ /, '') # if (IO.readlines(@fileLocation) != "")
       @savedFiles = tempLoad.chomp.split(",") #loads as array automatically
       @savedSeries = false
       @savedSeries = true if (readSettings[1].include? "on")
+      @prepend = format_prepend
     end
 
   end
@@ -39,13 +42,14 @@ class SettingsFile
     IO.readlines(@fileLocation)
   end
 
-  def writeSettings(filestosave, series)
+  def writeSettings(filestosave, series, prepend)
     # receive an array joined by ',' -- needs to be string
       open(@fileLocation, "w") do |writefile|
         # scrub extra characters so it's only comma-separated values and no spaces, for easy reading
         puts "Going to write: #{filestosave}" if testing
         writefile.puts filestosave
         writefile.puts "series active = " + "#{series}"
+        writefile.puts "prepend = #{prepend}"
       end
       if testing
         puts "Contents of .bnrangle now:"
@@ -62,17 +66,24 @@ class SettingsFile
     answer = STDIN.gets.chomp
     if answer == "Y"
       FileUtils.touch(".bnrangle")
-      writeSettings("", false)
+      writeSettings("", false, "")
     else
       puts "You typed: #{answer} -- Unless you type Y, I won't clear settings."
     end
   end
 
+  def format_prepend
+    prepend = readSettings[2]
+    prepend.slice!("prepend = ")
+    prepend.chomp
+  end
+
+
 end
 
 
 def valid_commands
-  ["add", "help", "series", "forget", "list", "clear"]
+  ["add", "help", "series", "forget", "list", "clear", "prepend", "status"]
 end
 
 def command_parameter
@@ -95,14 +106,15 @@ def changing_series
 end
 
 def help_text
-  puts "Batch Name Wrangler by Mehron Kugler"
+  puts "Batch Name Wrangler 0.0.1 by Mehron Kugler\n"
   puts "Possible command-line arguments are: "
-  puts "\"series\" followed by on or off: request that all filenames stored by the program end in a series of numbers going up from 1."
-  puts "\"series\" by itself will show the status of the SERIES variable."
-  puts "\"add\" followed by any number of files separated by spaces: adds the specified files to the Wrangler's memory for renaming."
-  puts "\"forget\" followed by files which you have already added: removes the specified files from BNWrangler's memory."
-  puts "\"clear\": Wipes all settings. Use carefully."
-  puts "\"help\": this help text, which also shows up by running the program without arguments."
+  puts "series (followed by \"on\" or \"off\"): request that all filenames stored by the program end in a series of numbers going up from 1."
+  puts "series by itself will show the status of the SERIES variable."
+  puts "add (followed by a list of files separated by spaces): adds the specified files to the Wrangler's memory for renaming."
+  puts "forget (followed by files which you have already added): removes the specified files from BNWrangler's memory."
+  puts "clear: Wipes all settings. Use carefully."
+  puts "prepend: Add the specified text to the beginning of each filename to be modified."
+  puts "help: this help text, which also shows up by running the program without arguments."
 end
 
 def needs_help
@@ -172,33 +184,52 @@ def change_series
   end
 end
 
+def changing_prepend
+  true if command_parameter == "prepend" && ARGV.length == 2
+end
+
+def change_prepend
+  addSession = SettingsFile.new
+  new_prepend_string = ARGV[1]
+  puts "(prepend) Going to put \"#{new_prepend_string}\" in front of all filenames."
+  puts "(prepend) Example filename will look like: \"#{new_prepend_string}DSC8478.jpg\""
+  puts "(prepend) Remember to use quotes if you want to put a space between the prefix and the filename itself."
+  addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeries, new_prepend_string)
+end
+
 #
 # TESTING
 
 test = SettingsFile.new
 
-puts "Command parameter (first argument you typed) is \"#{command_parameter}\"" if testing
+puts "(test input) Command parameter (first argument you typed) is \"#{command_parameter}\"" if testing
 puts "(test valid_commands): is what you typed in the array valid_commands? #{command_known}" if testing
-puts "SettingsFile.savedFiles.class: #{test.savedFiles.class}" if testing
-puts "SettingsFile.savedFiles.join(\",\").class: #{test.savedFiles.join(",").class}" if testing
+# puts "SettingsFile.savedFiles.class: #{test.savedFiles.class}" if testing
+# puts "SettingsFile.savedFiles.join(\",\").class: #{test.savedFiles.join(",").class}" if testing
 # puts "(testing Clear) You requested to CLEAR the .bnrangle file." if command_parameter == "clear"
+
+puts "(current settings) File list: #{test.savedFiles}"
+puts "(current settings) Series is: #{test.savedSeries}"
+puts "(current settings) Prepend is: \"#{test.prepend}\""
 
 #
 # WORKING
 
 puts "(ready) You wanted to add files, but didn't specify any." if command_parameter == "add" && ARGV.length == 1
-test.writeSettings(add_files, test.savedSeries) if adding_files         # WORKS
+test.writeSettings(add_files, test.savedSeries, test.prepend) if adding_files         # WORKS
 
 puts "(ready) You wanted to forget files, but didn't specify any." if command_parameter == "forget"
-test.writeSettings(forget_files, test.savedSeries) if forgetting_files  # WORKS
+test.writeSettings(forget_files, test.savedSeries, test.prepend) if forgetting_files  # WORKS
 
 help_text if needs_help                                                 # WORKS
 
-change_series if command_parameter == "series"                          # ?
+change_series if command_parameter == "series"                          # WORKS
 
 list_files if command_parameter == "list"                               # WORKS
 
-test.clear_settings if command_parameter == "clear"
+test.clear_settings if command_parameter == "clear"                     # WORKS
+
+change_prepend if changing_prepend                                      # ?
 
 =begin
 
