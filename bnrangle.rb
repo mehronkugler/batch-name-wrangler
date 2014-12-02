@@ -46,13 +46,13 @@ class SettingsFile
     # receive an array joined by ',' -- needs to be string
       open(@fileLocation, "w") do |writefile|
         # scrub extra characters so it's only comma-separated values and no spaces, for easy reading
-        puts "Going to write: #{filestosave}" if testing
+        puts "(writeSettings) Going to remember the following files: #{filestosave}" if testing
         writefile.puts filestosave
         writefile.puts "series active = " + "#{series}"
         writefile.puts "prepend = #{prepend}"
       end
       if testing
-        puts "Contents of .bnrangle now:"
+        puts "(writeSettings) Contents of .bnrangle now:"
         puts `cat .bnrangle`
       end
   end
@@ -194,7 +194,17 @@ def change_prepend
   puts "(prepend) Going to put \"#{new_prepend_string}\" in front of all filenames."
   puts "(prepend) Example filename will look like: \"#{new_prepend_string}DSC8478.jpg\""
   puts "(prepend) Remember to use quotes if you want to put a space between the prefix and the filename itself."
+  puts "(prepend) prepend \"\"\ will clear the prefix."
   addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeries, new_prepend_string)
+end
+
+def show_status
+  test = SettingsFile.new
+  puts "(current settings) I will rename #{test.savedFiles.length} files: #{test.savedFiles}"
+  # puts "(current settings) Series is: #{test.savedSeries}"
+  puts "(status) No numbers will be added after the filenames." if !test.savedSeries
+  puts "(status) Numbers starting at 1 will be added after filenames." if test.savedSeries
+  puts "(status) Prepend text is: \"#{test.prepend}\""
 end
 
 #
@@ -208,17 +218,15 @@ puts "(test valid_commands): is what you typed in the array valid_commands? #{co
 # puts "SettingsFile.savedFiles.join(\",\").class: #{test.savedFiles.join(",").class}" if testing
 # puts "(testing Clear) You requested to CLEAR the .bnrangle file." if command_parameter == "clear"
 
-puts "(current settings) File list: #{test.savedFiles}"
-puts "(current settings) Series is: #{test.savedSeries}"
-puts "(current settings) Prepend is: \"#{test.prepend}\""
+
 
 #
 # WORKING
 
-puts "(ready) You wanted to add files, but didn't specify any." if command_parameter == "add" && ARGV.length == 1
+puts "(add) You wanted to add files, but didn't specify any." if command_parameter == "add" && ARGV.length == 1
 test.writeSettings(add_files, test.savedSeries, test.prepend) if adding_files         # WORKS
 
-puts "(ready) You wanted to forget files, but didn't specify any." if command_parameter == "forget"
+puts "(forget) You wanted to forget files, but didn't specify any." if command_parameter == "forget"
 test.writeSettings(forget_files, test.savedSeries, test.prepend) if forgetting_files  # WORKS
 
 help_text if needs_help                                                 # WORKS
@@ -229,7 +237,9 @@ list_files if command_parameter == "list"                               # WORKS
 
 test.clear_settings if command_parameter == "clear"                     # WORKS
 
-change_prepend if changing_prepend                                      # ?
+change_prepend if changing_prepend                                      # WORKS
+
+show_status if command_parameter == "status"                            # WORKS (keep updated)
 
 =begin
 
