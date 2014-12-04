@@ -14,25 +14,28 @@ class SettingsFile
 
   attr_reader :fileLocation
   attr_accessor :savedFiles
-  attr_accessor :savedSeries
+  attr_accessor :savedSeriesActive
   attr_accessor :prepend
   attr_accessor :append
+  attr_accessor :seriestxt
 
   def initialize
     @fileLocation = ".bnrangle"
     if readSettings[0].class == NilClass #blank line, new file
       tempLoad = Array.new
       @savedFiles = tempLoad
-      @savedSeries = false
+      @savedSeriesActive = false
       @prepend = ""
       @append = ""
+      @seriestxt = ""
     else
       tempLoad = readSettings[0].gsub(/ /, '') # if (IO.readlines(@fileLocation) != "")
       @savedFiles = tempLoad.chomp.split(",") #loads as array automatically
-      @savedSeries = false
-      @savedSeries = true if (readSettings[1].include? "on")
+      @savedSeriesActive = false
+      @savedSeriesActive = true if format_seriestxt != "" # now depends on whether there is content in seriestxt
       @prepend = format_prepend
       @append = format_append
+      @seriestxt = format_seriestxt
     end
 
   end
@@ -45,15 +48,16 @@ class SettingsFile
     IO.readlines(@fileLocation)
   end
 
-  def writeSettings(filestosave, series, prepend_text, append_text)
+  def writeSettings(filestosave, seriesboolean, prepend_text, append_text, series_string)
     # receive an array joined by ',' -- needs to be string
       open(@fileLocation, "w") do |writefile|
         # scrub extra characters so it's only comma-separated values and no spaces, for easy reading
         puts "(writeSettings) Going to remember the following files: #{filestosave}" if testing
         writefile.puts filestosave
-        writefile.puts "series active = " + "#{series}"
+        writefile.puts "series active = " + "#{seriesboolean}"
         writefile.puts "prepend = #{prepend_text}"
         writefile.puts "append = #{append_text}"
+        writefile.puts "seriestxt = #{series_string}"
       end
       if testing
         puts "(writeSettings) Contents of .bnrangle now:"
@@ -70,7 +74,7 @@ class SettingsFile
     answer = STDIN.gets.chomp
     if answer == "Y"
       FileUtils.touch(".bnrangle")
-      writeSettings("", false, "")
+      writeSettings("", false, "", "", "")
     else
       puts "You typed: #{answer} -- Unless you type Y, I won't clear settings."
     end
@@ -86,6 +90,12 @@ class SettingsFile
     append = readSettings[3]
     append.slice!("append = ")
     append.chomp
+  end
+
+  def format_seriestxt
+    seriestxt = readSettings[4]
+    seriestxt.slice!("seriestxt = ")
+    seriestxt.chomp
   end
 
 end
@@ -111,7 +121,7 @@ def adding_files
 end
 
 def changing_series
-  true if command_parameter == "series" && ARGV.length == 2 && (ARGV[1] == "true" || ARGV[1] == "false")
+  true if command_parameter == "series" && ARGV.length == 2
 end
 
 def help_text
@@ -185,12 +195,14 @@ end
 def change_series
   addSession = SettingsFile.new
   if changing_series
-    addSession.savedSeries = true if ARGV[1].include? "true"
-    addSession.savedSeries = false if ARGV[1].include? "false"
-    puts "(Series) Going to save series as: #{addSession.savedSeries}"
-    addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeries, addSession.prepend, addSession.append)
+    addSession.savedSeriesActive = true if ARGV[1] != "" # not blank, then changing series"
+    addSession.savedSeriesActive = false if ARGV[1] == ""
+    puts "(series) All filenames will be changed to: \"#{ARGV[1]}\""
+    puts "(series) Based on what you typed, I will change all filenames: #{addSession.savedSeriesActive}"
+    addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeriesActive, addSession.prepend, addSession.append, ARGV[1])
   else
-    puts "(Series) The SERIES variable is set to: #{addSession.savedSeries} (will/will not add numbers starting at to all files.)"
+    puts "(series) You want to change the basename of every file: #{addSession.savedSeriesActive}"
+    puts "(series) You request that all base filenames be changed to : #{addSession.seriestxt}" if addSession.savedSeriesActive
   end
 end
 
@@ -205,7 +217,7 @@ def change_prepend
   puts "(prepend) Example filename will look like: \"#{new_prepend_string}DSC8478#{addSession.append}.jpg\""
   puts "(prepend) Remember to use quotes if you want to put a space between the prefix and the filename itself."
   puts "(prepend) prepend \"\"\ will clear the prefix."
-  addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeries, new_prepend_string, addSession.append)
+  addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeriesActive, new_prepend_string, addSession.append, addSession.seriestxt)
 end
 
 def changing_append
@@ -219,15 +231,16 @@ def change_append
   puts "(append) Example filename will look like \"#{addSession.prepend}DSC8478#{new_append_string}.jpg\""
   puts "(append) Remember to use quotes if you want to put a space between the filename and the text after it."
   puts "(append) append \"\" will clear the appended text."
-  #addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeries, addSession.prepend, new_append_string)
+  addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeriesActive, addSession.prepend, new_append_string, addSession.seriestxt)
 end
 
 def show_status
   test = SettingsFile.new
   puts "(status) I will rename #{test.savedFiles.length} files: #{test.savedFiles}"
-  # puts "(current settings) Series is: #{test.savedSeries}"
-  puts "(status) No numbers will be added after the filenames." if !test.savedSeries
-  puts "(status) Numbers starting at 1 will be added after filenames." if test.savedSeries
+  # puts "(current settings) Series is: #{test.savedSeriesActive}"
+  # puts "(status) I won't replace all base names of files using the series command." if !test.savedSeriesActive
+  puts "(status) No numbers will be added after the filenames." if !test.savedSeriesActive
+  puts "(status) Numbers starting at 1 will be added after filenames." if test.savedSeriesActive
   puts "(status) Prepended text: #{test.prepend}"
   puts "(status) Appended text: #{test.append}"
   puts "(status) Final result: For example #{example_changed_filename_string}"
@@ -235,13 +248,14 @@ end
 
 def example_changed_filename_string
   test = SettingsFile.new
-  seriestxt = "_1" if test.savedSeries
+  seriesnum = "_1" if test.savedSeriesActive
   basename = "EXAMPLE" if test.savedFiles.length == 0
   basename = File.basename(test.savedFiles[0], File.extname(test.savedFiles[0])) if test.savedFiles.length > 0
   extension = ".jpg" if test.savedFiles.length == 0
   extension = File.extname(test.savedFiles[0]) if test.savedFiles.length > 0
+  basename = test.seriestxt if test.savedSeriesActive
   # filename = test.savedFiles.
-  "\"#{test.prepend}" + "#{basename}" + "#{test.append}" + "#{seriestxt}" + "#{extension}" + "\""
+  "\"#{test.prepend}" + "#{basename}" + "#{test.append}" + "#{seriesnum}" + "#{extension}" + "\""
 end
 
 
@@ -262,10 +276,10 @@ test = SettingsFile.new
 # WORKING
 
 puts "(add) You wanted to add files, but didn't specify any." if command_parameter == "add" && ARGV.length == 1
-test.writeSettings(add_files, test.savedSeries, test.prepend, test.append) if adding_files         # WORKS
+test.writeSettings(add_files, test.savedSeriesActive, test.prepend, test.append, test.seriestxt) if adding_files         # WORKS
 
 puts "(forget) You wanted to forget files, but didn't specify any." if command_parameter == "forget" && ARGV.length == 1
-test.writeSettings(forget_files, test.savedSeries, test.prepend, test.append) if forgetting_files  # WORKS
+test.writeSettings(forget_files, test.savedSeriesActive, test.prepend, test.append, test.seriestxt) if forgetting_files  # WORKS
 
 help_text if needs_help                                                 # WORKS
 
@@ -280,6 +294,7 @@ change_prepend if changing_prepend                                      # WORKS
 show_status if command_parameter == "status"                            # WORKS (keep updated)
 
 change_append if changing_append                                        # WORKS
+
 =begin
 
 clear_all_settings if command_parameter == "clear"
