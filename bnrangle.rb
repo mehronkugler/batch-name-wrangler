@@ -142,7 +142,6 @@ def help_text
   puts "status".yellow + ": Reminds you of the naming changes you want to make to your list of files."
   puts "testrun".yellow + ": Will do a test run of your filename changes."
   puts "help".yellow + ": this help text, which also shows up by running the program by itself."
-  puts "Bugs: ".red + "Doesn't work with files that have spaces in their names."
 end
 
 def needs_help
@@ -293,11 +292,29 @@ def testrun
   test.savedFiles.each do |renamefile|
     # show original
     # show renamed
-    puts "(testrun)".green + " Changed #{renamefile} to #{changed_filename_string(renamefile, test.savedFiles.index(renamefile))}"
+    filefolder = File.dirname(File.expand_path(renamefile))
+    newfile = "#{filefolder}/#{changed_filename_string(renamefile, test.savedFiles.index(renamefile))}"
+    puts "(testrun)".green + " Changed #{filefolder}/#{renamefile} to " + "#{newfile}".yellow
   end
-
 end
 
+# the real deal
+def rename_files
+  test = SettingsFile.new
+  puts "(renaming)".green + "Going to rename files. Use " + "testrun".yellow + " if you just want to test things first."
+  puts "(renaming)".green + "Continue? Y or N"
+    answer = STDIN.gets.chomp
+    if answer == "Y"
+      # do stuff
+      test.savedFiles.each do |renamefile|
+        Fileutils.
+        puts "(renaming)".green + " Renamed #{renamefile} to #{changed_filename_string(renamefile, test.savedFiles.index(renamefile))}"
+      end
+    else
+      puts "You typed: #{answer} -- Unless you type " + "Y".red + ", I won't clear settings."
+    end
+
+end
 
 #
 # TESTING
