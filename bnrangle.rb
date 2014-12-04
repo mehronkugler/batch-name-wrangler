@@ -11,7 +11,7 @@ require 'colored'
 # green is for status/operational messages
 
 def testing
-  true #change to false when done testing
+  false #change to false when done testing
 end
 
 class SettingsFile
@@ -104,9 +104,14 @@ class SettingsFile
 
 end
 
+=begin
+
+Begin all functions, etc.  
+
+=end
 
 def valid_commands
-  ["add", "help", "series", "forget", "list", "clear", "prepend", "status", "append", "testrun"]
+  ["add", "help", "series", "forget", "list", "clear", "prepend", "status", "append", "testrun", "rename"]
 end
 
 def command_parameter
@@ -294,24 +299,30 @@ def testrun
     # show renamed
     filefolder = File.dirname(File.expand_path(renamefile))
     newfile = "#{filefolder}/#{changed_filename_string(renamefile, test.savedFiles.index(renamefile))}"
-    puts "(testrun)".green + " Changed #{filefolder}/#{renamefile} to " + "#{newfile}".yellow
+    puts "(testrun)".green + " Changed #{filefolder}/#{renamefile} to\n    " + "#{newfile}".yellow
   end
 end
 
 # the real deal
 def rename_files
   test = SettingsFile.new
-  puts "(renaming)".green + "Going to rename files. Use " + "testrun".yellow + " if you just want to test things first."
-  puts "(renaming)".green + "Continue? Y or N"
+  puts "(rename)".green + "Going to rename files. Use " + "testrun".yellow + " if you just want to test things first."
+  puts "(rename)".green + "Continue? Y or N"
     answer = STDIN.gets.chomp
     if answer == "Y"
       # do stuff
       test.savedFiles.each do |renamefile|
-        Fileutils.
-        puts "(renaming)".green + " Renamed #{renamefile} to #{changed_filename_string(renamefile, test.savedFiles.index(renamefile))}"
+        filefolder = File.dirname(File.expand_path(renamefile))
+        oldfile = "#{filefolder}/#{renamefile}"
+        newfile = "#{filefolder}/#{changed_filename_string(renamefile, test.savedFiles.index(renamefile))}"
+        puts "(rename)".green + " Changed #{filefolder}/#{renamefile} to\n    " + "#{newfile}".yellow
+        FileUtils.mv(oldfile, newfile)
       end
+        puts "(rename)".green + " Created new .bnrangle file, we're done here.".blue
+        FileUtils.touch(".bnrangle")
+        test.writeSettings("", false, "", "", "")
     else
-      puts "You typed: #{answer} -- Unless you type " + "Y".red + ", I won't clear settings."
+      puts "You typed: #{answer} -- Unless you type " + "Y".red + ", I won't rename anything."
     end
 
 end
@@ -352,7 +363,9 @@ show_status if command_parameter == "status"                            # WORKS 
 
 change_append if command_parameter == "append"                          # WORKS
 
-testrun if command_parameter == "testrun"                               # ?
+testrun if command_parameter == "testrun"                               # WORKS
+
+rename_files if command_parameter == "rename"                           # ?
 =begin
 
 clear_all_settings if command_parameter == "clear"
