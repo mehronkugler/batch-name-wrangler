@@ -3,7 +3,6 @@
 # batch name wrangler by Mehron Kugler
 # version 0.0.1
 
-# todo : deal with blank settings file
 require 'fileutils'
 require 'colored'
 
