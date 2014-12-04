@@ -102,7 +102,7 @@ end
 
 
 def valid_commands
-  ["add", "help", "series", "forget", "list", "clear", "prepend", "status", "append"]
+  ["add", "help", "series", "forget", "list", "clear", "prepend", "status", "append", "testrun"]
 end
 
 def command_parameter
@@ -125,16 +125,19 @@ def changing_series
 end
 
 def help_text
-  puts "Batch Name Wrangler 0.0.1 by Mehron Kugler\n"
-  puts "Possible command-line arguments are: "
-  puts "series (followed by \"on\" or \"off\"): request that all filenames stored by the program end in a series of numbers going up from 1."
-  puts "series by itself will show the status of the SERIES variable."
-  puts "add (followed by a list of files separated by spaces): adds the specified files to the Wrangler's memory for renaming."
-  puts "forget (followed by files which you have already added): removes the specified files from BNWrangler's memory."
+  puts "Batch Name Wrangler 0.0.1 by Mehron Kugler"
+  puts "This small program lets you rename a group of files in a list.\n"
+  puts "Possible commands are are: "
+  puts "add (followed by a list of files separated by spaces): adds the specified files to your list for renaming."
+  puts "forget (followed by files which you have already added): removes the specified files from your list."
   puts "clear: Wipes all settings. Use carefully."
-  puts "prepend: Add the specified text to the beginning of each filename to be modified."
-  puts "append: Put the specified text after each filename to be modified."
-  puts "help: this help text, which also shows up by running the program without arguments."
+  puts "prepend: Add the specified text to the beginning of each filename."
+  puts "append: Put the specified text after each filename."
+  puts "series (followed by a word or string of words in quotes): change all the *base filenames* of each file in your list to one description."
+  puts "- You can still prepend and append text if you have changed the names of all your files to one name."
+  puts "- series by itself will show the status of the SERIES variable."
+  puts "status: Reminds you of the naming changes you want to make to your list of files."
+  puts "help: this help text, which also shows up by running the program by itself."
 end
 
 def needs_help
@@ -169,8 +172,6 @@ def add_files
     addSession.savedFiles.join(',')
 end
 
-
-
 def list_files
   addSession = SettingsFile.new
   puts "(List) The LIST command was requested." if testing
@@ -179,7 +180,6 @@ end
 
 def forget_files
   addSession = SettingsFile.new
-
   ARGV.drop(1).each do |remfile|
     if addSession.savedFiles.include? remfile
       puts "Forgetting " + remfile
@@ -201,8 +201,10 @@ def change_series
     puts "(series) Based on what you typed, I will change all filenames: #{addSession.savedSeriesActive}"
     addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeriesActive, addSession.prepend, addSession.append, ARGV[1])
   else
-    puts "(series) You want to change the basename of every file: #{addSession.savedSeriesActive}"
-    puts "(series) You request that all base filenames be changed to : #{addSession.seriestxt}" if addSession.savedSeriesActive
+    # puts "(series) You want to change the basename of every file: #{addSession.savedSeriesActive}"
+    puts "(series) You want to change all base filenames to: #{addSession.seriestxt}" if addSession.savedSeriesActive
+    puts "(series) Use series to change all base filenames, not including appended or prepended text or file extension."
+    puts "(series) Use series followed by \"\" to keep existing base names of files."
   end
 end
 
@@ -211,13 +213,18 @@ def changing_prepend
 end
 
 def change_prepend
-  addSession = SettingsFile.new
-  new_prepend_string = ARGV[1]
-  puts "(prepend) Going to put \"#{new_prepend_string}\" in front of all filenames."
-  puts "(prepend) Example filename will look like: \"#{new_prepend_string}DSC8478#{addSession.append}.jpg\""
-  puts "(prepend) Remember to use quotes if you want to put a space between the prefix and the filename itself."
-  puts "(prepend) prepend \"\"\ will clear the prefix."
-  addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeriesActive, new_prepend_string, addSession.append, addSession.seriestxt)
+  addSession = SettingsFile.new 
+  if changing_prepend
+    new_prepend_string = ARGV[1]
+    puts "(prepend) Going to put \"#{new_prepend_string}\" in front of all filenames."
+    puts "(prepend) Example filename will look like: \"#{new_prepend_string}DSC8478#{addSession.append}.jpg\""
+    puts "(prepend) For readability, use an underscore mark \"_\" at the end of your PREPEND text."
+    puts "(prepend) prepend \"\"\ will clear the prefix."
+    addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeriesActive, new_prepend_string, addSession.append, addSession.seriestxt)
+  else
+    puts "(prepend) I will put \"#{addSession.prepend}\" in front of all filenames." if addSession.prepend != ""
+    puts "(prepend) Use \"prepend TEXT\" to place TEXT in front of all filenames." if addSession.prepend == ""
+  end
 end
 
 def changing_append
@@ -226,12 +233,17 @@ end
 
 def change_append
   addSession = SettingsFile.new
-  new_append_string = ARGV[1]
-  puts "(append) Going to put \"#{new_append_string}\" after all filenames."
-  puts "(append) Example filename will look like \"#{addSession.prepend}DSC8478#{new_append_string}.jpg\""
-  puts "(append) Remember to use quotes if you want to put a space between the filename and the text after it."
-  puts "(append) append \"\" will clear the appended text."
-  addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeriesActive, addSession.prepend, new_append_string, addSession.seriestxt)
+  if changing_append
+    new_append_string = ARGV[1]
+    puts "(append) Going to put \"#{new_append_string}\" after all filenames."
+    puts "(append) Example filename will look like \"#{addSession.prepend}DSC8478#{new_append_string}.jpg\""
+    puts "(append) For readability, use an underscore mark \"_\" at the beginning of your APPEND text."
+    puts "(append) append \"\" will clear the appended text."
+    addSession.writeSettings(addSession.savedFiles.join(','), addSession.savedSeriesActive, addSession.prepend, new_append_string, addSession.seriestxt)
+  else
+    puts "(append) I will put \"#{addSession.append}\" after all filenames, but before file extensions." if addSession.append != ""
+    puts "(append) Use \"append TEXT\" to place TEXT after all filenames, but before file extensions." if addSession.append == ""
+  end
 end
 
 def show_status
@@ -258,6 +270,29 @@ def example_changed_filename_string
   "\"#{test.prepend}" + "#{basename}" + "#{test.append}" + "#{seriesnum}" + "#{extension}" + "\""
 end
 
+# This assumes that there are files in the savedFiles array.
+def changed_filename_string(source_file, index)
+  test = SettingsFile.new
+  indexresult = ""
+  indexresult = "_#{index + 1}" if test.savedSeriesActive
+  basename = File.basename(source_file, File.extname(source_file)) # get name of file without extension
+  extension = File.extname(source_file)
+  basename = test.seriestxt if test.savedSeriesActive
+  basename = "#{test.prepend}" + "#{basename}" + "#{test.append}" + "#{indexresult}" + "#{extension}"
+end
+
+def testrun
+  test = SettingsFile.new
+  puts "(testrun) Going to simulate renaming of #{test.savedFiles.length} files."
+  test.savedFiles.each do |renamefile|
+    # show original
+    # show renamed
+    puts "(testrun) Changed #{renamefile} to #{changed_filename_string(renamefile, test.savedFiles.index(renamefile))}"
+  end
+
+end
+
+
 
 #
 # TESTING
@@ -278,7 +313,7 @@ test = SettingsFile.new
 puts "(add) You wanted to add files, but didn't specify any." if command_parameter == "add" && ARGV.length == 1
 test.writeSettings(add_files, test.savedSeriesActive, test.prepend, test.append, test.seriestxt) if adding_files         # WORKS
 
-puts "(forget) You wanted to forget files, but didn't specify any." if command_parameter == "forget" && ARGV.length == 1
+puts "(forget) You will need to tell what files to forget from your active list." if command_parameter == "forget" && ARGV.length == 1
 test.writeSettings(forget_files, test.savedSeriesActive, test.prepend, test.append, test.seriestxt) if forgetting_files  # WORKS
 
 help_text if needs_help                                                 # WORKS
@@ -289,12 +324,13 @@ list_files if command_parameter == "list"                               # WORKS
 
 test.clear_settings if command_parameter == "clear"                     # WORKS
 
-change_prepend if changing_prepend                                      # WORKS
+change_prepend if command_parameter == "prepend"                        # WORKS
 
 show_status if command_parameter == "status"                            # WORKS (keep updated)
 
-change_append if changing_append                                        # WORKS
+change_append if command_parameter == "append"                          # WORKS
 
+testrun if command_parameter == "testrun"                               # ?
 =begin
 
 clear_all_settings if command_parameter == "clear"
