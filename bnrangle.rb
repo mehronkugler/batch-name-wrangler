@@ -7,8 +7,10 @@
 require 'fileutils'
 require 'colored'
 
-# yellow is for help
-# green is for status/operational messages
+# .yellow is for help
+# .green is for status/operational messages
+# .red is for error messages
+# .blue is for magic moments
 
 def testing
   false #change to false when done testing
@@ -346,7 +348,7 @@ test = SettingsFile.new
 puts "(add)".yellow + " You wanted to add files, but didn't specify any." if command_parameter == "add" && ARGV.length == 1
 test.writeSettings(add_files, test.savedSeriesActive, test.prepend, test.append, test.seriestxt) if adding_files         # WORKS
 
-puts "(forget)".yellow + " You will need to tell what files to forget from your active list." if command_parameter == "forget" && ARGV.length == 1
+puts "(forget)".yellow + " You will need to tell me what files you want to forget from your active list." if command_parameter == "forget" && ARGV.length == 1
 test.writeSettings(forget_files, test.savedSeriesActive, test.prepend, test.append, test.seriestxt) if forgetting_files  # WORKS
 
 help_text if needs_help                                                 # WORKS

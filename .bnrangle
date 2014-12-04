@@ -1,3 +1,5 @@
-~/java0.log, a.txt, pslog.txt, random.dat, linkedinsig.html, ganttproject.log
+
 series active = false
-2014-11-18 21:55:18 -0500
+prepend = 
+append = 
+seriestxt = 
