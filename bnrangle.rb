@@ -264,7 +264,7 @@ test = SettingsFile.new
 puts "(add) You wanted to add files, but didn't specify any." if command_parameter == "add" && ARGV.length == 1
 test.writeSettings(add_files, test.savedSeries, test.prepend, test.append) if adding_files         # WORKS
 
-puts "(forget) You wanted to forget files, but didn't specify any." if command_parameter == "forget"
+puts "(forget) You wanted to forget files, but didn't specify any." if command_parameter == "forget" && ARGV.length == 1
 test.writeSettings(forget_files, test.savedSeries, test.prepend, test.append) if forgetting_files  # WORKS
 
 help_text if needs_help                                                 # WORKS
@@ -279,7 +279,7 @@ change_prepend if changing_prepend                                      # WORKS
 
 show_status if command_parameter == "status"                            # WORKS (keep updated)
 
-change_append if changing_append                                        # ?
+change_append if changing_append                                        # WORKS
 =begin
 
 clear_all_settings if command_parameter == "clear"
